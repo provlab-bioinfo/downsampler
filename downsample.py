@@ -1,6 +1,5 @@
 #!/usr/bin/python
-
-import subprocess, re, shutil
+import subprocess, re, shutil, os
 from pathlib import Path
 from alive_progress import alive_bar
 
@@ -22,21 +21,43 @@ def seqtk_sample(file, output, depth):
         else:
             subprocess.run(["seqtk","sample",str(file),str(depth)], stdout=outfile)
 
-def downsample(files, output, regex, depths = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], verbose = True):
+# def samtools_view(file, output, depth):
+#     #samtools view -s [proportion] -b [file] > [output]
+
+def downsample(files, output, regex, depths = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], random = True, verbose = True):
     files = files if isinstance(files, list) else [files]
     depths = depths if isinstance(depths, list) else [depths]
-    with alive_bar(total = len(files)*(len(depths)+1), title="Downsampling files....", unknown="dots_waves", disable = not verbose) as bar:
+    
+    if not random and len(depths) != len(set(depths)):
+        raise("Cannot have duplicated depths with a non-random subset. Remove duplicate depths or set random = True.")
+
+    depths = sorted(depths, reverse = True)
+    recursiveDepths = {depths[0]: depths[0]}
+    if not random: 
+        for i in reversed(range(1,len(depths))): recursiveDepths.update({depths[i]: depths[i]/depths[i-1]})
+    
+    with alive_bar(total = len(files)*(len(depths)+1), title="Downsampling files....", unknown="dots_waves", disable = not verbose) as bar:         
         for file in files:
             f = Path(file)
+            lastout = None
             for depth in depths:
-                    out = Path(output,re.sub(regex, fr'\1_{depth}', f.stem) + f.suffix)
+                out = Path(output,re.sub(regex, fr'\1_{depth}', f.stem) + f.suffix)
+                if random or lastout is None:
                     seqtk_sample(file, out, depth)
-                    bar()
+                    print(f"file: {file}\nout: {out}\ndepth: {depth}\n")
+                else:
+                    seqtk_sample(lastout, out, recursiveDepths.get(depth))
+                    print(f"file: {lastout}\nout: {out}\ndepth: {recursiveDepths.get(depth)}\n")
+                lastout = out
+                bar()
             f = Path(output,re.sub(regex, fr'\1_1.0', f.stem) + f.suffix)
             shutil.copyfile(file, f)
-    
-files = ["F1_S1_L001_R1_001.fastq.gz","/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/F2_S2_L002_R2_002.fastq.gz"]
+            bar()
+
+file1 = "/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/F1_S1_L001_R1_001.fastq.gz"
+file2 = "/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/F2_S2_L002_R2_002.fastq.gz"
 output = "/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/"
 regex = '(_S\\d*)'
 
-downsample(files, output, regex)
+downsample(file1, output, regex, random = True)
+downsample(file2, output, regex, random = False)
