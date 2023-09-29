@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import subprocess, re, shutil, os
+import subprocess, re, shutil, os, random
 from pathlib import Path
 from alive_progress import alive_bar
 
@@ -21,8 +21,13 @@ def seqtk_sample(file, output, depth):
         else:
             subprocess.run(["seqtk","sample",str(file),str(depth)], stdout=outfile)
 
-# def samtools_view(file, output, depth):
-#     #samtools view -s [proportion] -b [file] > [output]
+def samtools_view(file, output, depth):
+    #samtools view -s [proportion] -b [file] > [output]
+    if (depth < 1): depth = depth + random.randint(1,100000) # For samtools; -s is INT.FRAC, where INT is the seed.
+    if (Path(file).suffix != ".bam"): 
+        subprocess.run(["samtools","view","-s",depth,"-o",output,file])
+    else:
+        subprocess.run(["samtools","view","-s",depth,"-b","-o",output,file])
 
 def downsample(files, output, regex, depths = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], random = True, verbose = True):
     files = files if isinstance(files, list) else [files]
@@ -30,6 +35,8 @@ def downsample(files, output, regex, depths = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7
     
     if not random and len(depths) != len(set(depths)):
         raise("Cannot have duplicated depths with a non-random subset. Remove duplicate depths or set random = True.")
+
+    if not os.path.exists(output): os.makedirs(output)
 
     depths = sorted(depths, reverse = True)
     recursiveDepths = {depths[0]: depths[0]}
@@ -54,10 +61,16 @@ def downsample(files, output, regex, depths = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7
             shutil.copyfile(file, f)
             bar()
 
-file1 = "/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/F1_S1_L001_R1_001.fastq.gz"
-file2 = "/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/F2_S2_L002_R2_002.fastq.gz"
-output = "/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/"
+# file1 = "/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/F1_S1_L001_R1_001.fastq.gz"
+# file2 = "/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/F2_S2_L002_R2_002.fastq.gz"
+# output = "/nfs/Genomics_DEV/projects/alindsay/Projects/downsampler/"
 regex = '(_S\\d*)'
+depths = [0.5,0.1,0.05,0.01,0.005,0.001]
+# downsample(file1, output, regex, random = True)
+# downsample(file2, output, regex, random = False)
 
-downsample(file1, output, regex, random = True)
-downsample(file2, output, regex, random = False)
+
+files = "/nfs/APL_Genomics/scratch/230927_N_I_008_WW/230927_MN01658_0129_A000H5NFKW/Alignment_1/20230928_065543/Fastq/"
+files = [os.path.abspath(os.path.join(files, p)) for p in os.listdir(files)]
+downsample(files, "/nfs/APL_Genomics/scratch/230927_N_I_008_WW/230927_MN01658_0129_A000H5NFKW/Alignment_1/20230928_065543/Fastq_rand/", regex, depths = depths, random = True)
+downsample(files, "/nfs/APL_Genomics/scratch/230927_N_I_008_WW/230927_MN01658_0129_A000H5NFKW/Alignment_1/20230928_065543/Fastq_seq/", regex, depths = depths, random = False)
