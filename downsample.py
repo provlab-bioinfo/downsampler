@@ -52,9 +52,9 @@ def downsample(files, output, regex, depths = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7
 
     :param files: Files to downsample, seperated by a space. E.g., `--files file1.fastq file2.fastq`.
     :param output: Path to the output folder
-    :param regex: Regex for modifying the file name to include the downsample proportion. E.g., for `F1_S1_L001_R1_001.fastq.gz` and `0.5` depth, `regex = '(_S\\d*)'` would produce `F1_S1_0.5_L001_R1_001.fastq.gz`.
-    :param depths: Depth as represented as propotion of the original sample, defaults to [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].
-    :param random: Should the reads be random or sequential. If sequential, all reads will be subsampled from the previous subsampled file. E.g., for depths = [0.7,0.8,0.9], the 0.9 depth is subsampled from the input file, the 0.8 depth is subsampled from the 0.9 depth output, and the 0.7 is subsampled from the 0.8 depth file. defaults to True
+    :param regex: Regex for modifying the file name to include the downsample proportion. E.g., for `F1_S1_L001_R1_001.fastq.gz` and `0.5` depth, `regex = '(_S\\d*)'` will insert '_0.5' right after '_S1', producing `F1_S1_0.5_L001_R1_001.fastq.gz`.
+    :param depths: List of depths as represented as propotion of the original sample, defaults to [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].
+    :param random: Should the reads be random or sequential? If sequential, all reads will be subsampled from the previous subsampled file. E.g., for depths = [0.7,0.8,0.9], the 0.9 depth is subsampled from the input file, the 0.8 depth is subsampled from the 0.9 depth output, and the 0.7 is subsampled from the 0.8 depth file. defaults to True
     :param includeOriginal: Include the original sample? Will be labelled with proportion of 1.0., defaults to True
     :param verbose: Be chatty, defaults to True
     """    
