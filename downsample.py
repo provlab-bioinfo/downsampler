@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import subprocess, re, shutil, os, random, argparse
+import subprocess, re, shutil, os, random, argparse, gzip
 from pathlib import Path
 from alive_progress import alive_bar
 
@@ -8,8 +8,12 @@ def isGZ(filepath):
     :param filepath: File to check
     :return: bool
     """    
-    with open(filepath, 'rb') as f:
-        return f.read(2) == b'\x1f\x8b'
+    with gzip.open(filepath, 'r') as fh:
+        try:
+            fh.read(1)
+        except gzip.BadGzipFile:
+            return False
+    return True
 
 def getReads(file):
     """Counts number of reads in a file via zcat
