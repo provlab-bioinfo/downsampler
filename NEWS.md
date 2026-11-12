@@ -1,3 +1,2 @@
-covid-nextstrain-collector 0.0.1
-
-* Added a `NEWS.md` file to track changes to the package.
+v1.0.0 - 12 Nov 2026
+* build: Released v1.0
